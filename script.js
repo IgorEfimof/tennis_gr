@@ -1,11 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const gameCount = 3;
+    const gameCount = 10;
     const gamesContainer = document.getElementById("games");
     const predictBtn = document.getElementById("predictBtn");
     const resultDiv = document.getElementById("result");
     const avgASpan = document.getElementById("avgA");
     const avgBSpan = document.getElementById("avgB");
     const winnerSpan = document.getElementById("winner");
+    const chartCanvas = document.getElementById("chart");
+    let chartInstance = null; // Переменная для экземпляра графика Chart.js
 
     const customKeyboard = document.getElementById("custom-keyboard");
     const keyboardButtons = customKeyboard.querySelectorAll("button");
@@ -26,34 +28,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const inputs = document.querySelectorAll("input[type='text']");
 
-    // Обработчики для полей ввода (появление/скрытие клавиатуры)
+    // Функция для скрытия клавиатуры
+    const hideKeyboard = () => {
+        customKeyboard.classList.remove("visible");
+        document.body.classList.remove("keyboard-active");
+        activeInput = null; // Сбрасываем активное поле
+    };
+
+    // Обработчики для полей ввода (появление клавиатуры)
     inputs.forEach((input) => {
-        // Устанавливаем inputmode="none" и readonly, чтобы предотвратить появление системной клавиатуры
         input.setAttribute('inputmode', 'none');
-        input.setAttribute('readonly', 'readonly');
+        input.setAttribute('readonly', 'readonly'); // Запрещаем ввод с системной клавиатуры
 
         input.addEventListener("focus", () => {
             activeInput = input;
             customKeyboard.classList.add("visible");
-            document.body.classList.add("keyboard-active"); // Добавляем класс для сдвига контента
+            document.body.classList.add("keyboard-active");
             input.select(); // Выделяем текст при фокусе
         });
-
-        // При потере фокуса скрываем клавиатуру, если это не последнее поле
-        input.addEventListener("blur", () => {
-             // Проверяем, если focus ушел на другой элемент, не являющийся кнопкой клавиатуры
-            setTimeout(() => {
-                if (!document.activeElement || !customKeyboard.contains(document.activeElement)) {
-                    customKeyboard.classList.remove("visible");
-                    document.body.classList.remove("keyboard-active");
-                }
-            }, 0); // Небольшая задержка, чтобы дать клику по кнопке клавиатуры сработать
-        });
+        // УДАЛЕН ОБРАБОТЧИК BLUR С INPUT. МЫ БУДЕМ СКРЫВАТЬ КЛАВИАТУРУ ТОЛЬКО ПО КЛИКУ ВНЕ ЕЁ.
     });
 
     // Обработчик для кнопок кастомной клавиатуры
     keyboardButtons.forEach(button => {
-        button.addEventListener("click", () => {
+        button.addEventListener("click", (e) => {
+            // Предотвращаем дефолтное действие (например, потерю фокуса с input)
+            e.preventDefault();
             if (!activeInput) return; // Если нет активного поля, ничего не делаем
 
             const key = button.dataset.key;
@@ -64,40 +64,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 activeInput.value = currentValue.slice(0, -1);
             } else if (key === ".") {
                 // Обрабатываем ввод десятичной точки/запятой
-                if (!currentValue.includes(',')) { // Если запятой еще нет
-                    if (currentValue.length === 0) {
-                        currentValue = "0,"; // Если поле пустое, начинаем с "0,"
-                    } else {
-                        currentValue += ","; // Добавляем запятую
-                    }
+                // Разрешаем добавить запятую только один раз
+                if (!currentValue.includes(',')) {
+                    // Если поле пустое, начинаем с "0,"
+                    // Иначе просто добавляем запятую
+                    activeInput.value = currentValue.length === 0 ? "0," : currentValue + ",";
                 }
-                activeInput.value = currentValue;
             } else {
                 // Вводим цифры
                 // Добавляем символ, если длина не превышает maxlength
                 if (currentValue.length < activeInput.maxLength) {
-                    currentValue += key;
-                    activeInput.value = currentValue;
+                    activeInput.value += key;
                 }
             }
 
-            // Дополнительная логика форматирования и перехода к следующему полю, как у вас было
+            // --- Логика форматирования и перехода к следующему полю ---
             let value = activeInput.value;
-            value = value.replace(/[^0-9,]/g, ""); // Убираем всё, кроме цифр и запятой
 
-            // Если нет запятой, но есть хотя бы одна цифра — ставим запятую после первой цифры
-            if (!value.includes(",") && value.length >= 1) {
-                if (value.length > 1 && value.length < activeInput.maxLength) { // Учитываем maxlength
-                    value = value[0] + ",";
-                } else if (value.length === 1) {
-                    value = value + ",";
-                }
-            }
+            // Убираем всё, кроме цифр и запятой
+            value = value.replace(/[^0-9,]/g, "");
 
+            // Если есть запятая
             if (value.includes(",")) {
                 const parts = value.split(",");
                 const before = parts[0];
-                let after = parts[1] || ""; // Учитываем, что after может быть пустым
+                let after = parts[1] || "";
+
+                // Если первая часть пуста, делаем "0"
+                if (before === "") {
+                    value = "0," + after;
+                }
 
                 // Разрешаем вводить максимум две цифры после запятой
                 if (after.length > 2) {
@@ -111,25 +107,38 @@ document.addEventListener("DOMContentLoaded", () => {
                 value = value.slice(0, activeInput.maxLength);
             }
 
-            activeInput.value = value;
+            activeInput.value = value; // Обновляем значение поля ввода
 
             // Переход к следующему полю при завершении формата X,XX
-            // Или если это последнее поле и оно заполнено до максимальной длины
+            // Проверяем, что число содержит запятую и 2 знака после нее
             if (value.includes(",") && value.split(",")[1].length === 2) {
                 const currentIndex = Array.from(inputs).indexOf(activeInput);
                 const nextInput = inputs[currentIndex + 1];
                 if (nextInput) {
-                    nextInput.focus();
+                    nextInput.focus(); // Переводим фокус на следующее поле
                 } else {
-                    activeInput.blur(); // Скрываем клавиатуру, если это последнее поле
-                    customKeyboard.classList.remove("visible");
-                    document.body.classList.remove("keyboard-active");
+                    // Если это последнее поле и оно заполнено, скрываем клавиатуру
+                    hideKeyboard();
                 }
             }
+            // --- Конец логики форматирования и перехода ---
         });
     });
 
+    // НОВЫЙ ГЛОБАЛЬНЫЙ ОБРАБОТЧИК КЛИКОВ ДЛЯ СКРЫТИЯ КЛАВИАТУРЫ
+    document.addEventListener("click", (e) => {
+        // Проверяем, если клик произошел вне полей ввода и вне самой клавиатуры
+        const isClickOnInput = Array.from(inputs).some(input => input.contains(e.target));
+        const isClickOnKeyboard = customKeyboard.contains(e.target);
+        const isClickOnPredictButton = predictBtn.contains(e.target);
 
+        // Если клавиатура видима и клик был НЕ на поле ввода, НЕ на клавиатуре и НЕ на кнопке прогноза
+        if (customKeyboard.classList.contains("visible") && !isClickOnInput && !isClickOnKeyboard && !isClickOnPredictButton) {
+            hideKeyboard();
+        }
+    });
+
+    // Обработчик для кнопки "Прогнозировать победителя"
     predictBtn.addEventListener("click", () => {
         const inputs = document.querySelectorAll("input[type='text']");
         let totalA = 0;
@@ -170,7 +179,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
         resultDiv.classList.remove("hidden");
         // Скрываем клавиатуру после расчета
-        customKeyboard.classList.remove("visible");
-        document.body.classList.remove("keyboard-active");
+        hideKeyboard();
     });
+
+    // Инициализация Chart.js (если планируется использовать)
+    if (chartCanvas) {
+        const ctx = chartCanvas.getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: []
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white'
+                        }
+                    }
+                }
+            }
+        });
+    }
 });
