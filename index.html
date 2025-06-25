@@ -381,10 +381,18 @@
                     // Валидация и доведение до формата X,XX
                     const formatValue = (str) => {
                         if (!str) return NaN;
-                        if (!str.includes(',')) { return parseFloat(str.replace(/,/g, ".") + '.00'); }
-                        const parts = str.split(',');
-                        if (parts[1].length === 0) { return parseFloat(parts[0] + '.00'); }
-                        if (parts[1].length === 1) { return parseFloat(parts[0] + '.' + parts[1] + '0'); }
+                        // Если строка содержит запятую, но после нее нет цифр, считаем, что это "X,00"
+                        // Если одна цифра после запятой, добавляем "0"
+                        if (str.includes(',')) {
+                            const parts = str.split(',');
+                            if (parts[1].length === 0) {
+                                str = parts[0] + ',00';
+                            } else if (parts[1].length === 1) {
+                                str = parts[0] + ',' + parts[1] + '0';
+                            }
+                        } else { // Если запятой нет, добавляем ",00"
+                             str = str + ',00';
+                        }
                         return parseFloat(str.replace(/,/g, "."));
                     };
                     
@@ -613,25 +621,32 @@
 
                     if (key === "delete") {
                         activeInput.value = currentValue.slice(0, -1);
-                        resultDiv.classList.add("hidden"); // Скрываем результат при очистке
+                        // resultDiv.classList.add("hidden"); // Не скрываем результат при частичном удалении, чтобы график был виден
                         performAnalysis(); // Пересчитываем, чтобы график обновился
                     } else if (key === ".") {
                         if (!currentValue.includes(',')) {
                             if (currentValue.length === 0) {
                                 activeInput.value = "0,";
-                            } else if (/^\d+$/.test(currentValue) && currentValue.length < 2) { // Позволяем только одну цифру до запятой
+                            } else if (/^\d+$/.test(currentValue) && currentValue.length < 2) { 
+                                // Позволяем только одну цифру до запятой, если пользователь уже ввёл её
                                 activeInput.value = currentValue + ",";
+                            } else if (currentValue.length === 0) {
+                                activeInput.value = "0,";
                             }
                         }
                     } else { // Если нажата цифровая кнопка
                         if (!currentValue.includes(',')) {
                             // Автоматическое добавление запятой после первой цифры
                             if (currentValue.length === 0) {
-                                activeInput.value = key + ',';
-                            } else if (currentValue.length === 1 && !isNaN(parseInt(currentValue))) { // Если уже есть 1 цифра, и она целая
+                                activeInput.value = key; // Вводим первую цифру
+                                // Не добавляем запятую сразу, это будет сделано при второй цифре или через .
+                            } else if (currentValue.length === 1 && !isNaN(parseInt(currentValue))) { 
+                                // Если уже есть 1 цифра, и она целая, то следующая идет после запятой
                                 activeInput.value = currentValue + ',' + key;
+                            } else if (currentValue.length < 5) { // Ограничение по длине, если нет запятой
+                                activeInput.value += key;
                             }
-                        } else {
+                        } else { // Если запятая уже есть
                             const parts = currentValue.split(',');
                             if (parts[1].length < 2) {
                                 activeInput.value += key;
@@ -641,9 +656,10 @@
 
                     // --- Логика автоматического перехода и обновления аналитики ---
                     let value = activeInput.value;
+                    const parts = value.split(',');
 
                     // Убедимся, что формат X,XX соблюден для перехода
-                    if (value.includes(",") && value.split(",")[1].length === 2) {
+                    if (parts.length === 2 && parts[1].length === 2) {
                         const currentIndex = Array.from(inputs).indexOf(activeInput);
                         const nextInput = inputs[currentIndex + 1];
 
