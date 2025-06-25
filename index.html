@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Прогноз победителя в настольном теннисе</title>
+    <title>Анализ коэффициентов в настольном теннисе (LIVE)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Общие стили */
@@ -123,7 +123,7 @@
         }
 
         /* Стили для кнопок */
-        #clearBtn { /* Изменено ID для новой кнопки */
+        #clearBtn {
             margin-top: 0.5rem;
             padding: 0.6rem 1rem;
             font-size: 1rem;
@@ -136,7 +136,7 @@
             width: 100%;
         }
 
-        #clearBtn:hover { /* Изменено ID для новой кнопки */
+        #clearBtn:hover {
             background-color: #d32f2f;
         }
 
@@ -242,7 +242,7 @@
                 padding: 0.3rem;
             }
 
-            #clearBtn { /* Изменено ID для новой кнопки */
+            #clearBtn {
                 font-size: 0.95rem;
                 padding: 0.5rem;
             }
@@ -278,8 +278,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>Прогноз победителя в настольном теннисе</h1>
-            <p>Введите коэффициенты на игроков A и B по каждому гейму.</p>
+            <h1>Анализ коэффициентов в настольном теннисе (LIVE)</h1>
+            <p>Введите коэффициенты на игроков A и B по каждому гейму. Используйте этот инструмент для отслеживания динамики, а не для прямого прогноза исхода матча.</p>
         </header>
         <main>
             <div class="players">
@@ -297,12 +297,12 @@
             <div id="games"></div>
             <button id="clearBtn">Очистить данные</button>
             <div id="result" class="result hidden">
-                <h2>Результат прогноза:</h2>
+                <h2>Текущая аналитика:</h2>
                 <p>Средний коэффициент игрока A: <span id="avgA"></span></p>
                 <p>Средний коэффициент игрока B: <span id="avgB"></span></p>
-                <p><strong>Победитель:</strong> <span id="winner"></span></p>
-                <p>Точка пересечения на графике: <span id="intersectionPoint"></span></p>
-                <p>Будущая точка пересечения (волновой анализ): <span id="futureIntersectionPoint"></span></p>
+                <p>Текущая разница (A - B): <span id="currentDifference"></span></p>
+                <p><strong>Анализ динамики:</strong> <span id="trendAnalysis"></span></p>
+                <p>Коэффициенты были максимально близки в: <span id="closestPoint"></span></p>
             </div>
             <canvas id="chart"></canvas>
         </main>
@@ -330,11 +330,10 @@
             const resultDiv = document.getElementById("result");
             const avgASpan = document.getElementById("avgA");
             const avgBSpan = document.getElementById("avgB");
-            const winnerSpan = document.getElementById("winner");
-            const intersectionPointSpan = document.getElementById("intersectionPoint");
-            const futureIntersectionPointSpan = document.getElementById("futureIntersectionPoint");
+            const currentDifferenceSpan = document.getElementById("currentDifference");
+            const trendAnalysisSpan = document.getElementById("trendAnalysis");
+            const closestPointSpan = document.getElementById("closestPoint");
             
-            // Возвращаем Chart.js
             const chartCanvas = document.getElementById("chart");
             let chartInstance = null; // Переменная для экземпляра графика Chart.js
 
@@ -380,50 +379,41 @@
                     let valueStrB = inputB.value;
 
                     // Валидация и доведение до формата X,XX
-                    if (valueStrA) {
-                        if (!valueStrA.includes(',')) { valueStrA += ',00'; }
-                        else if (valueStrA.split(',')[1].length === 0) { valueStrA += '00'; }
-                        else if (valueStrA.split(',')[1].length === 1) { valueStrA += '0'; }
-                        valuesA.push(parseFloat(valueStrA.replace(/,/g, ".")));
-                    } else {
-                        valuesA.push(NaN); // Добавляем NaN, чтобы сохранить индексы
-                    }
-
-                    if (valueStrB) {
-                        if (!valueStrB.includes(',')) { valueStrB += ',00'; }
-                        else if (valueStrB.split(',')[1].length === 0) { valueStrB += '00'; }
-                        else if (valueStrB.split(',')[1].length === 1) { valueStrB += '0'; }
-                        valuesB.push(parseFloat(valueStrB.replace(/,/g, ".")));
-                    } else {
-                        valuesB.push(NaN); // Добавляем NaN, чтобы сохранить индексы
-                    }
+                    const formatValue = (str) => {
+                        if (!str) return NaN;
+                        if (!str.includes(',')) { return parseFloat(str.replace(/,/g, ".") + '.00'); }
+                        const parts = str.split(',');
+                        if (parts[1].length === 0) { return parseFloat(parts[0] + '.00'); }
+                        if (parts[1].length === 1) { return parseFloat(parts[0] + '.' + parts[1] + '0'); }
+                        return parseFloat(str.replace(/,/g, "."));
+                    };
+                    
+                    valuesA.push(formatValue(valueStrA));
+                    valuesB.push(formatValue(valueStrB));
                 }
                 return { valuesA, valuesB };
             };
 
-            // Функция для расчета победителя и точек пересечения
-            const performCalculation = () => {
+            // Функция для расчета и обновления аналитики
+            const performAnalysis = () => {
                 const { valuesA, valuesB } = getFormattedValues();
 
                 let totalA = 0;
                 let totalB = 0;
                 let filledGamesCount = 0; // Считаем заполненные пары геймов
 
-                const labels = []; // Для графика
-                const dataA = []; // Для графика
-                const dataB = []; // Для графика
+                const labels = [];
+                const dataA = [];
+                const dataB = [];
 
                 for (let i = 0; i < gameCount; i++) {
-                    const valA = valuesA[i];
-                    const valB = valuesB[i];
-
                     labels.push(`Гейм ${i + 1}`);
-                    dataA.push(valA);
-                    dataB.push(valB);
+                    dataA.push(valuesA[i]);
+                    dataB.push(valuesB[i]);
 
-                    if (!isNaN(valA) && !isNaN(valB)) {
-                        totalA += valA;
-                        totalB += valB;
+                    if (!isNaN(valuesA[i]) && !isNaN(valuesB[i])) {
+                        totalA += valuesA[i];
+                        totalB += valuesB[i];
                         filledGamesCount++;
                     }
                 }
@@ -444,110 +434,68 @@
                 avgASpan.textContent = avgA;
                 avgBSpan.textContent = avgB;
 
-                // --- Логика определения точки пересечения ---
-                let intersectionPoint = 'Нет';
-                let futureIntersectionPoint = 'Не определена'; // Для волнового анализа
+                // --- Расчет текущей разницы ---
+                let currentDiff = 'Нет данных';
+                if (!isNaN(valuesA[filledGamesCount - 1]) && !isNaN(valuesB[filledGamesCount - 1])) {
+                    currentDiff = (valuesA[filledGamesCount - 1] - valuesB[filledGamesCount - 1]).toFixed(2);
+                }
+                currentDifferenceSpan.textContent = currentDiff;
 
-                // Для простой линии, найдем "точку пересечения" как момент, когда A и B были максимально близки
-                // или когда они "перешли" друг через друга, если смотреть на изменение их разницы
-                let minDiff = Infinity;
-                let currentIntersectionGame = -1;
-                let lastDiff = 0;
+                // --- Анализ динамики и ближайшая точка ---
+                let trend = 'Недостаточно данных для анализа';
+                let closestGame = 'Нет';
+                let minDiffAbs = Infinity;
+
+                if (filledGamesCount >= 2) {
+                    const lastA = valuesA[filledGamesCount - 1];
+                    const secondLastA = valuesA[filledGamesCount - 2];
+                    const lastB = valuesB[filledGamesCount - 1];
+                    const secondLastB = valuesB[filledGamesCount - 2];
+
+                    let trendA = '';
+                    if (lastA < secondLastA) trendA = 'улучшается';
+                    else if (lastA > secondLastA) trendA = 'ухудшается';
+                    else trendA = 'стабилен';
+
+                    let trendB = '';
+                    if (lastB < secondLastB) trendB = 'улучшается';
+                    else if (lastB > secondLastB) trendB = 'ухудшается';
+                    else trendB = 'стабилен';
+
+                    if (trendA === trendB && trendA === 'стабилен') {
+                        trend = 'Оба коэффициента стабильны.';
+                    } else {
+                        trend = `Коэффициент Игрока A ${trendA}. Коэффициент Игрока B ${trendB}.`;
+                    }
+
+                    // Проверка на сближение/расхождение
+                    const diffNow = Math.abs(lastA - lastB);
+                    const diffBefore = Math.abs(secondLastA - secondLastB);
+
+                    if (diffNow < diffBefore) {
+                        trend += ' Графики **сближаются**.';
+                    } else if (diffNow > diffBefore) {
+                        trend += ' Графики **расходятся**.';
+                    } else {
+                        trend += ' Графики движутся **параллельно**.';
+                    }
+                }
+                trendAnalysisSpan.innerHTML = trend;
+
 
                 for (let i = 0; i < filledGamesCount; i++) {
                     const diff = valuesA[i] - valuesB[i];
-                    if (Math.abs(diff) < Math.abs(minDiff)) {
-                        minDiff = diff;
-                        currentIntersectionGame = i + 1;
-                    }
-                    // Если знаки разницы меняются, значит, было пересечение
-                    if (i > 0 && (valuesA[i] - valuesB[i]) * (valuesA[i-1] - valuesB[i-1]) < 0) {
-                        // Для упрощения, можно считать эту точку пересечения как место, где они пересеклись
-                        // В более сложной системе это может быть интерполяция
-                        if (currentIntersectionGame === -1) { // Если не нашли более близкую точку
-                            currentIntersectionGame = i + 1;
-                        }
+                    if (Math.abs(diff) < minDiffAbs) {
+                        minDiffAbs = Math.abs(diff);
+                        closestGame = `Гейм ${i + 1}`;
                     }
                 }
-
-                if (currentIntersectionGame !== -1) {
-                    intersectionPoint = `Гейм ${currentIntersectionGame}`;
-                }
+                closestPointSpan.textContent = closestGame;
 
 
-                // --- "Будущая точка пересечения" на основе волнового анализа (симуляция) ---
-                // Предположим, что "волновой анализ" предсказывает тренд.
-                // Например, если A в среднем ниже B, то A "на подъеме" и наоборот.
-                // Или можно просто предсказать, что линии продолжат свой текущий наклон.
-                // Для простоты, давайте смоделируем это:
-                // Если разница между avgA и avgB большая, то для "пересечения" потребуется много очков.
-                // Если маленькая, то мало.
-                const scoreToWin = 11; // Пример: для победы нужно 11 очков
-
-                const avgDiff = Math.abs(avgA - avgB);
-
-                if (filledGamesCount >= 2) { // Нужно хотя бы 2 гейма для минимальной "тенденции"
-                    // Простая симуляция: предсказываем, сколько "очков" потребуется для гипотетического пересечения
-                    // Если коэффициенты расходятся, предполагаем, что они продолжат расходиться
-                    // Если сходятся, то продолжат сходиться
-                    const lastAGain = valuesA[filledGamesCount - 1] - valuesA[filledGamesCount - 2];
-                    const lastBGain = valuesB[filledGamesCount - 1] - valuesB[filledGamesCount - 2];
-
-                    // Очень упрощенная "будущая точка пересечения":
-                    // Если A в целом ниже (лучше) и имеет положительную динамику (lastAGain < 0),
-                    // а B выше (хуже) и имеет отрицательную динамику (lastBGain > 0),
-                    // то пересечение вряд ли произойдет или произойдет далеко.
-                    // И наоборот.
-                    
-                    // Простое правило: если средняя разница больше 0.5, считаем, что пересечение за пределами "11 очков"
-                    if (avgDiff > 0.5) {
-                         futureIntersectionPoint = `За пределами ${scoreToWin} очков`;
-                    } else if (avgDiff > 0.1) {
-                        futureIntersectionPoint = `Возможно, к ${scoreToWin / 2} очкам`;
-                    } else {
-                        futureIntersectionPoint = `Близка, к ${scoreToWin / 4} очкам`;
-                    }
-                } else {
-                    futureIntersectionPoint = `Недостаточно данных для волнового анализа`;
-                }
-
-                intersectionPointSpan.textContent = intersectionPoint;
-                futureIntersectionPointSpan.textContent = futureIntersectionPoint;
-
-                // --- Определение победителя на основе новой логики ---
-                let winner = "Ничья";
-                let finalWinnerDetermined = false;
-
-                // 1. Если будущая точка пересечения "не входит в прогноз" (за пределами 11 очков)
-                if (futureIntersectionPoint.includes("За пределами 11 очков")) {
-                    if (avgA < avgB) { // Игрок A ниже (лучше)
-                        winner = "Игрок A (График ниже)";
-                    } else if (avgB < avgA) { // Игрок B ниже (лучше)
-                        winner = "Игрок B (График ниже)";
-                    } else {
-                        winner = "Ничья (Графики одинаковы)";
-                    }
-                    finalWinnerDetermined = true;
-                } else {
-                    // 2. Если будущая точка пересечения входит в прогноз, используем ее для более точного определения
-                    // (Эта часть требует более сложной модели, сейчас это будет простое сравнение средних)
-                    // Для текущей симуляции, если "пересечение" не далеко,
-                    // и у нас нет сложной модели, вернемся к простым средним или текущему тренду.
-                    // Здесь можно было бы использовать TF.js для более сложного анализа тренда.
-                    if (avgA < avgB) {
-                        winner = "Игрок A";
-                    } else if (avgB < avgA) {
-                        winner = "Игрок B";
-                    } else {
-                        winner = "Ничья";
-                    }
-                    finalWinnerDetermined = true; // Для простоты всегда определяем
-                }
-
-                winnerSpan.textContent = winner;
                 resultDiv.classList.remove("hidden");
 
-                // --- Обновление графика ---
+                // --- Обновление/Инициализация графика ---
                 if (chartInstance) {
                     chartInstance.data.labels = labels;
                     chartInstance.data.datasets[0].data = dataA;
@@ -588,7 +536,7 @@
                         },
                         options: {
                             responsive: true,
-                            maintainAspectRatio: false, // Для лучшего контроля размера
+                            maintainAspectRatio: false,
                             scales: {
                                 x: {
                                     title: {
@@ -666,16 +614,12 @@
                     if (key === "delete") {
                         activeInput.value = currentValue.slice(0, -1);
                         resultDiv.classList.add("hidden"); // Скрываем результат при очистке
-                        if (chartInstance) { // Очищаем график при удалении
-                            chartInstance.data.labels = [];
-                            chartInstance.data.datasets.forEach(dataset => dataset.data = []);
-                            chartInstance.update();
-                        }
+                        performAnalysis(); // Пересчитываем, чтобы график обновился
                     } else if (key === ".") {
                         if (!currentValue.includes(',')) {
                             if (currentValue.length === 0) {
                                 activeInput.value = "0,";
-                            } else if (/^\d+$/.test(currentValue)) {
+                            } else if (/^\d+$/.test(currentValue) && currentValue.length < 2) { // Позволяем только одну цифру до запятой
                                 activeInput.value = currentValue + ",";
                             }
                         }
@@ -684,11 +628,8 @@
                             // Автоматическое добавление запятой после первой цифры
                             if (currentValue.length === 0) {
                                 activeInput.value = key + ',';
-                            } else { // Если уже есть одна цифра, например '1', и вводим '6' -> '1,6'
-                                activeInput.value += key;
-                                if (!activeInput.value.includes(',')) { // Если не было запятой
-                                    activeInput.value += ','; // Добавляем запятую
-                                }
+                            } else if (currentValue.length === 1 && !isNaN(parseInt(currentValue))) { // Если уже есть 1 цифра, и она целая
+                                activeInput.value = currentValue + ',' + key;
                             }
                         } else {
                             const parts = currentValue.split(',');
@@ -698,7 +639,7 @@
                         }
                     }
 
-                    // --- Логика автоматического перехода и расчета ---
+                    // --- Логика автоматического перехода и обновления аналитики ---
                     let value = activeInput.value;
 
                     // Убедимся, что формат X,XX соблюден для перехода
@@ -712,10 +653,11 @@
                             // Если это последнее поле и оно заполнено
                             if (activeInput === lastInput) {
                                 hideKeyboard(); // Скрываем клавиатуру
-                                performCalculation(); // Выполняем расчет
                             }
                         }
                     }
+                    // Обновляем аналитику и график после каждого ввода цифры
+                    performAnalysis();
                 });
             });
 
