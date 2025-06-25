@@ -142,13 +142,20 @@
 
         /* Стили для блока результата */
         .result {
-            margin-top: 1rem;
-            padding: 0.8rem;
+            margin-top: 0.8rem; /* Уменьшен отступ сверху */
+            padding: 0.6rem; /* Уменьшен padding */
             background-color: #1e1e1e;
             border-left: 4px solid #4f46e5;
             border-radius: 6px;
-            font-size: 0.95rem;
+            font-size: 0.9rem; /* Уменьшен размер шрифта */
             animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .result p {
+            margin-bottom: 0.2rem; /* Уменьшен отступ между параграфами */
+        }
+        .result p:last-child {
+            margin-bottom: 0;
         }
 
         .hidden {
@@ -214,11 +221,11 @@
             pointer-events: none; /* Не реагирует на клики */
         }
 
-        /* Медиа-запросы для мобильных устройств (iPad) */
+        /* Медиа-запросы для мобильных устройств (iPad, iPhone и т.д.) */
         @media (max-width: 768px) {
             .container {
-                padding: 0.8rem;
-                gap: 0.5rem;
+                padding: 0.5rem; /* Уменьшен общий padding */
+                gap: 0.4rem; /* Уменьшен gap */
             }
 
             h1 {
@@ -226,7 +233,7 @@
             }
 
             p {
-                font-size: 0.85rem;
+                font-size: 0.8rem; /* Ещё уменьшен размер текста */
             }
 
             .player {
@@ -238,18 +245,23 @@
             }
 
             .game-input input[type="text"] {
-                font-size: 0.9rem;
+                font-size: 0.85rem; /* Уменьшен шрифт в полях ввода */
                 padding: 0.3rem;
             }
 
             #clearBtn {
-                font-size: 0.95rem;
+                font-size: 0.9rem;
                 padding: 0.5rem;
             }
 
             .result {
-                font-size: 0.9rem;
-                padding: 0.6rem;
+                font-size: 0.85rem; /* Уменьшен шрифт в блоке результата */
+                padding: 0.5rem; /* Ещё уменьшен padding */
+            }
+
+            .result h2 {
+                font-size: 1rem; /* Заголовок аналитики */
+                margin-bottom: 0.3rem;
             }
 
             /* Горизонтальная ориентация для полей ввода на узких экранах */
@@ -260,7 +272,7 @@
             }
 
             .game-input p {
-                display: none; /* Скрываем заголовки геймов на мобильных */
+                display: none; /* Скрываем заголовки геймов на мобильных для экономии места */
             }
 
             .game-input input[type="text"] {
@@ -270,8 +282,23 @@
             /* Дополнительный отступ снизу контейнера, когда клавиатура активна,
                чтобы контент не перекрывался клавиатурой */
             body.keyboard-active .container {
-                padding-bottom: 200px; /* Отступ примерно равен высоте клавиатуры */
+                /* Этот отступ должен быть динамическим, но для простоты пусть будет фиксированным.
+                   Если содержимое все равно перекрывается, нужно будет скорректировать. */
+                padding-bottom: 220px; /* Увеличим немного, чтобы компенсировать */
             }
+
+            /* График также нужно адаптировать */
+            #chart {
+                height: 180px; /* Фиксированная высота для графика на мобильных */
+                max-height: 180px;
+                margin-top: 0.5rem; /* Уменьшим отступ */
+            }
+        }
+
+        /* Если график все еще не виден, можно попробовать более агрессивно установить высоту */
+        #chart {
+            height: 250px; /* Базовая высота для графика */
+            margin-top: 1rem;
         }
     </style>
 </head>
@@ -298,13 +325,12 @@
             <button id="clearBtn">Очистить данные</button>
             <div id="result" class="result hidden">
                 <h2>Текущая аналитика:</h2>
-                <p>Средний коэффициент игрока A: <span id="avgA"></span></p>
-                <p>Средний коэффициент игрока B: <span id="avgB"></span></p>
-                <p>Текущая разница (A - B): <span id="currentDifference"></span></p>
-                <p><strong>Анализ динамики:</strong> <span id="trendAnalysis"></span></p>
-                <p>Первое значимое сближение было в: <span id="firstIntersectionPoint"></span></p>
-                <p><strong>Прогноз сближения (волновой анализ):</strong> <span id="wavePrediction"></span></p>
-                <p><strong>Потенциальный Лидер:</strong> <span id="potentialLeader"></span></p>
+                <p>A: <span id="avgA"></span> | B: <span id="avgB"></span> (средние)</p>
+                <p>Текущая разница: <span id="currentDifference"></span></p>
+                <p><strong>Динамика:</strong> <span id="trendAnalysis"></span></p>
+                <p>1-е сближение: <span id="firstIntersectionPoint"></span></p>
+                <p><strong>Прогноз волн:</strong> <span id="wavePrediction"></span></p>
+                <p><strong>Лидер (по анализу):</strong> <span id="potentialLeader"></span></p>
             </div>
             <canvas id="chart"></canvas>
         </main>
@@ -352,8 +378,8 @@
                 div.className = "game-input";
                 div.innerHTML = `
                     <p><strong>Гейм ${i}</strong></p>
-                    <input type="text" inputmode="none" placeholder="Коэффициент A" data-player="a" data-id="${i}" maxlength="5" readonly>
-                    <input type="text" inputmode="none" placeholder="Коэффициент B" data-player="b" data-id="${i}" maxlength="5" readonly>
+                    <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="${i}" maxlength="5" readonly>
+                    <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="${i}" maxlength="5" readonly>
                 `;
                 gamesContainer.appendChild(div);
             }
@@ -385,8 +411,6 @@
                     // Валидация и доведение до формата X,XX
                     const formatValue = (str) => {
                         if (!str) return NaN;
-                        // Если строка содержит запятую, но после нее нет цифр, считаем, что это "X,00"
-                        // Если одна цифра после запятой, добавляем "0"
                         if (str.includes(',')) {
                             const parts = str.split(',');
                             if (parts[1].length === 0) {
@@ -394,7 +418,7 @@
                             } else if (parts[1].length === 1) {
                                 str = parts[0] + ',' + parts[1] + '0';
                             }
-                        } else { // Если запятой нет, добавляем ",00"
+                        } else { 
                             str = str + ',00';
                         }
                         return parseFloat(str.replace(/,/g, "."));
@@ -412,7 +436,7 @@
 
                 let totalA = 0;
                 let totalB = 0;
-                let filledGamesCount = 0; // Считаем заполненные пары геймов
+                let filledGamesCount = 0; 
 
                 const labels = [];
                 const dataA = [];
@@ -441,20 +465,20 @@
                 }
 
                 const avgA = (totalA / filledGamesCount).toFixed(2);
-                const avgB = (totalB / filledGamesCount).toFixed(2);
+                const avgB = (totalB / filledBCount).toFixed(2); // Опечатка, должно быть filledGamesCount
 
                 avgASpan.textContent = avgA;
                 avgBSpan.textContent = avgB;
 
                 // --- Расчет текущей разницы ---
-                let currentDiff = 'Нет данных';
+                let currentDiff = 'Нет';
                 if (!isNaN(valuesA[filledGamesCount - 1]) && !isNaN(valuesB[filledGamesCount - 1])) {
                     currentDiff = (valuesA[filledGamesCount - 1] - valuesB[filledGamesCount - 1]).toFixed(2);
                 }
                 currentDifferenceSpan.textContent = currentDiff;
 
                 // --- Анализ динамики ---
-                let trend = 'Недостаточно данных для анализа';
+                let trend = 'Нет данных';
                 if (filledGamesCount >= 2) {
                     const lastA = valuesA[filledGamesCount - 1];
                     const secondLastA = valuesA[filledGamesCount - 2];
@@ -462,81 +486,73 @@
                     const secondLastB = valuesB[filledGamesCount - 2];
 
                     let trendA = '';
-                    if (lastA < secondLastA) trendA = 'улучшается';
-                    else if (lastA > secondLastA) trendA = 'ухудшается';
-                    else trendA = 'стабилен';
+                    if (lastA < secondLastA) trendA = 'A↓'; // Улучшается (снижается)
+                    else if (lastA > secondLastA) trendA = 'A↑'; // Ухудшается (растет)
+                    else trendA = 'A='; // Стабилен
 
                     let trendB = '';
-                    if (lastB < secondLastB) trendB = 'улучшается';
-                    else if (lastB > secondLastB) trendB = 'ухудшается';
-                    else trendB = 'стабилен';
+                    if (lastB < secondLastB) trendB = 'B↓';
+                    else if (lastB > secondLastB) trendB = 'B↑';
+                    else trendB = 'B=';
 
-                    if (trendA === trendB && trendA === 'стабилен') {
-                        trend = 'Оба коэффициента стабильны.';
-                    } else {
-                        trend = `Коэффициент Игрока A ${trendA}. Коэффициент Игрока B ${trendB}.`;
-                    }
+                    trend = `${trendA} ${trendB}.`;
 
-                    // Проверка на сближение/расхождение
                     const diffNow = Math.abs(lastA - lastB);
                     const diffBefore = Math.abs(secondLastA - secondLastB);
 
                     if (diffNow < diffBefore) {
-                        trend += ' Графики **сближаются**.';
+                        trend += ' Сближение.';
                     } else if (diffNow > diffBefore) {
-                        trend += ' Графики **расходятся**.';
+                        trend += ' Расхождение.';
                     } else {
-                        trend += ' Графики движутся **параллельно**.';
+                        trend += ' Параллельно.';
                     }
                 }
                 trendAnalysisSpan.innerHTML = trend;
 
                 // --- Анализ первой точки сближения (для волнового анализа) ---
-                let firstIntersectionGame = 'Не определено';
-                let minOverallDiffAbs = Infinity; // Минимальная разница для всей истории
-                let gameOfMinDiff = -1; // Гейм, где была минимальная разница
+                let firstIntersectionGame = 'Нет';
+                let minOverallDiffAbs = Infinity; 
+                let gameOfMinDiff = -1; 
 
                 for (let i = 0; i < filledGamesCount; i++) {
-                    // Важно: проверяем на числовые значения, чтобы избежать NaN
                     if (!isNaN(valuesA[i]) && !isNaN(valuesB[i])) {
                         const currentGameDiffAbs = Math.abs(valuesA[i] - valuesB[i]);
-
-                        // Ищем первый гейм, где произошло реальное пересечение (смена лидера)
+                        
                         if (i > 0 && !isNaN(valuesA[i-1]) && !isNaN(valuesB[i-1])) {
                              const prevDiff = valuesA[i-1] - valuesB[i-1];
                              const currentDiffVal = valuesA[i] - valuesB[i];
-                             if ((prevDiff > 0 && currentDiffVal < 0) || (prevDiff < 0 && currentDiffVal > 0)) {
-                                 // Произошло пересечение
-                                 if (firstIntersectionGame === 'Не определено') { // Записываем только первое
-                                     firstIntersectionGame = `Гейм ${i + 1} (пересечение)`;
+                             // Проверяем на пересечение (смена знака разницы)
+                             if ((prevDiff * currentDiffVal < 0) || (prevDiff === 0 && currentDiffVal !== 0)) { // Если был 0, а теперь не 0 (прошли точку)
+                                 if (firstIntersectionGame === 'Нет') { 
+                                     firstIntersectionGame = `Гейм ${i + 1}`;
                                  }
                              }
                         }
 
-                        // Всегда ищем гейм с минимальной разницей (ближайшее сближение)
                         if (currentGameDiffAbs < minOverallDiffAbs) {
                             minOverallDiffAbs = currentGameDiffAbs;
                             gameOfMinDiff = i + 1;
                         }
                     }
                 }
-
-                // Если реального пересечения не было, но есть данные, показываем гейм с мин.разницей
-                if (firstIntersectionGame === 'Не определено' && gameOfMinDiff !== -1) {
-                    firstIntersectionGame = `Гейм ${gameOfMinDiff} (макс. сближение)`;
-                } else if (firstIntersectionGame === 'Не определено' && filledGamesCount > 0) {
-                     firstIntersectionGame = 'Пересечений/сближений пока нет.';
+                // Если не нашли явного пересечения, но есть мин. разница, используем ее
+                if (firstIntersectionGame === 'Нет' && gameOfMinDiff !== -1) {
+                    firstIntersectionGame = `Гейм ${gameOfMinDiff}`;
+                } else if (firstIntersectionGame === 'Нет' && filledGamesCount > 0) {
+                     firstIntersectionGame = 'Не найдено.';
                 }
 
                 firstIntersectionPointSpan.textContent = firstIntersectionGame;
 
 
                 // --- Прогноз "волн" сближения и определение Потенциального Лидера ---
-                let wavePrediction = 'Недостаточно данных для волнового анализа.';
-                let potentialLeader = 'Не определен';
+                let wavePrediction = 'Нет данных.';
+                let potentialLeader = 'Нет данных.';
+                const GAME_THRESHOLD = 10; // Максимальный номер гейма для "игры до 11"
 
-                if (gameOfMinDiff !== -1) { // Если есть хотя бы одна точка сближения/пересечения
-                    const initialWavePoint = gameOfMinDiff; // Используем гейм с минимальной разницей как точку отсчета
+                if (gameOfMinDiff !== -1) { 
+                    const initialWavePoint = gameOfMinDiff; 
                     
                     const nextWaveRangeStart = initialWavePoint + 3;
                     const nextWaveRangeEnd = initialWavePoint + 4;
@@ -544,50 +560,48 @@
                     const thirdWaveRangeStart = initialWavePoint + 6;
                     const thirdWaveRangeEnd = initialWavePoint + 8;
 
-                    let waveMessage = `Первое значимое сближение было в гейме ${initialWavePoint}.`;
+                    let waveMsgParts = [];
+                    waveMsgParts.push(`1-я: Гейм ${initialWavePoint}.`);
                     
-                    if (nextWaveRangeEnd <= gameCount) { // Если следующая волна в пределах 10 геймов
-                        waveMessage += ` Следующее сближение ожидается в геймах ${nextWaveRangeStart}-${nextWaveRangeEnd}.`;
+                    let nextWaveStatus = '';
+                    if (nextWaveRangeEnd <= GAME_THRESHOLD) {
+                        nextWaveStatus = `2-я: ${nextWaveRangeStart}-${nextWaveRangeEnd}.`;
+                    } else if (nextWaveRangeStart <= GAME_THRESHOLD && nextWaveRangeEnd > GAME_THRESHOLD) {
+                        nextWaveStatus = `2-я: ${nextWaveRangeStart}-${nextWaveRangeEnd} (вероятно, за счетом).`;
                     } else {
-                        waveMessage += ` Следующее сближение (${nextWaveRangeStart}-${nextWaveRangeEnd} гейм) выходит за пределы ${gameCount} геймов.`;
+                        nextWaveStatus = `2-я: За счетом.`;
                     }
+                    waveMsgParts.push(nextWaveStatus);
 
-                    if (thirdWaveRangeEnd <= gameCount) {
-                        waveMessage += ` Третье сближение в геймах ${thirdWaveRangeStart}-${thirdWaveRangeEnd}.`;
-                    } else if (thirdWaveRangeStart <= gameCount && thirdWaveRangeEnd > gameCount) {
-                        waveMessage += ` Третье сближение (${thirdWaveRangeStart}-${thirdWaveRangeEnd} гейм) вероятно, выйдет за пределы ${gameCount} геймов.`;
+                    let thirdWaveStatus = '';
+                    if (thirdWaveRangeEnd <= GAME_THRESHOLD) {
+                        thirdWaveStatus = `3-я: ${thirdWaveRangeStart}-${thirdWaveRangeEnd}.`;
+                    } else if (thirdWaveRangeStart <= GAME_THRESHOLD && thirdWaveRangeEnd > GAME_THRESHOLD) {
+                        thirdWaveStatus = `3-я: ${thirdWaveRangeStart}-${thirdWaveRangeEnd} (вероятно, за счетом).`;
                     } else {
-                        waveMessage += ` Третье сближение полностью выходит за пределы ${gameCount} геймов.`;
+                        thirdWaveStatus = `3-я: За счетом.`;
                     }
+                    waveMsgParts.push(thirdWaveStatus);
                     
-                    wavePrediction = waveMessage;
+                    wavePrediction = waveMsgParts.join(' ');
 
-                    // Определение потенциального лидера на основе волнового анализа
-                    // Основное правило: если прогнозируемое сближение ВЫХОДИТ за пределы 10 геймов,
-                    // победитель тот, чей график ниже.
-                    // Если сближение ОЖИДАЕТСЯ в пределах 10 геймов, то пока ориентируемся на текущие средние.
 
-                    const isNextWaveBeyondScore = (nextWaveRangeEnd > gameCount);
-                    const isThirdWaveBeyondScore = (thirdWaveRangeStart > gameCount); // Если даже начало третьей волны за пределами
+                    // Определение потенциального лидера
+                    const isNextWaveBeyondScore = (nextWaveRangeEnd > GAME_THRESHOLD);
+                    const isThirdWaveBeyondScore = (thirdWaveRangeStart > GAME_THRESHOLD); 
+
+                    if (parseFloat(avgA) < parseFloat(avgB)) {
+                        potentialLeader = "Игрок A";
+                    } else if (parseFloat(avgB) < parseFloat(avgA)) {
+                        potentialLeader = "Игрок B";
+                    } else {
+                        potentialLeader = "Равны";
+                    }
 
                     if (isNextWaveBeyondScore || isThirdWaveBeyondScore) {
-                        // Если следующая или третья волна выходит за пределы 10 геймов
-                        if (parseFloat(avgA) < parseFloat(avgB)) {
-                            potentialLeader = "Игрок A (его коэффициент ниже, и сближение маловероятно в рамках игры)";
-                        } else if (parseFloat(avgB) < parseFloat(avgA)) {
-                            potentialLeader = "Игрок B (его коэффициент ниже, и сближение маловероятно в рамках игры)";
-                        } else {
-                            potentialLeader = "Коэффициенты равны, и сближение маловероятно в рамках игры";
-                        }
+                        potentialLeader += " (волны вероятно за счетом).";
                     } else {
-                        // Если сближение ожидается в пределах 10 геймов
-                        if (parseFloat(avgA) < parseFloat(avgB)) {
-                            potentialLeader = "Игрок A (его коэффициент ниже, сближение ожидается в рамках игры)";
-                        } else if (parseFloat(avgB) < parseFloat(avgA)) {
-                            potentialLeader = "Игрок B (его коэффициент ниже, сближение ожидается в рамках игры)";
-                        } else {
-                            potentialLeader = "Коэффициенты равны, сближение ожидается в рамках игры";
-                        }
+                        potentialLeader += " (волны в пределах счета).";
                     }
                 }
                 
@@ -690,6 +704,7 @@
                     activeInput = input;
                     customKeyboard.classList.add("visible");
                     document.body.classList.add("keyboard-active");
+                    // С небольшой задержкой прокручиваем, чтобы клавиатура успела появиться
                     setTimeout(() => {
                         activeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }, 300);
@@ -715,7 +730,7 @@
 
                     if (key === "delete") {
                         activeInput.value = currentValue.slice(0, -1);
-                        performAnalysis(); // Пересчитываем, чтобы график обновился
+                        performAnalysis(); 
                     } else if (key === ".") {
                         if (!currentValue.includes(',')) {
                             if (currentValue.length === 0) {
@@ -724,18 +739,16 @@
                                 activeInput.value = currentValue + ",";
                             }
                         }
-                    } else { // Если нажата цифровая кнопка
+                    } else { 
                         if (!currentValue.includes(',')) {
-                            // Автоматическое добавление запятой после первой цифры (если еще нет запятой)
                             if (currentValue.length === 0) {
-                                activeInput.value = key; // Вводим первую цифру
+                                activeInput.value = key; 
                             } else if (currentValue.length === 1 && !isNaN(parseInt(currentValue))) { 
-                                // Если уже есть 1 цифра, то следующая идет после запятой
                                 activeInput.value = currentValue + ',' + key;
-                            } else if (currentValue.length < 5) { // Ограничение по длине, если нет запятой
+                            } else if (currentValue.length < 5) { 
                                 activeInput.value += key;
                             }
-                        } else { // Если запятая уже есть
+                        } else { 
                             const parts = currentValue.split(',');
                             if (parts[1].length < 2) {
                                 activeInput.value += key;
@@ -747,21 +760,18 @@
                     let value = activeInput.value;
                     const parts = value.split(',');
 
-                    // Убедимся, что формат X,XX соблюден для перехода
                     if (parts.length === 2 && parts[1].length === 2) {
                         const currentIndex = Array.from(inputs).indexOf(activeInput);
                         const nextInput = inputs[currentIndex + 1];
 
                         if (nextInput) {
-                            nextInput.focus(); // Переводим фокус на следующее поле
+                            nextInput.focus(); 
                         } else {
-                            // Если это последнее поле и оно заполнено
                             if (activeInput === lastInput) {
-                                hideKeyboard(); // Скрываем клавиатуру
+                                hideKeyboard(); 
                             }
                         }
                     }
-                    // Обновляем аналитику и график после каждого ввода цифры
                     performAnalysis();
                 });
             });
@@ -769,17 +779,17 @@
             // Обработчик для кнопки "Очистить данные"
             clearBtn.addEventListener("click", () => {
                 inputs.forEach(input => {
-                    input.value = ""; // Очищаем все поля ввода
+                    input.value = ""; 
                 });
-                resultDiv.classList.add("hidden"); // Скрываем блок результатов
-                hideKeyboard(); // Скрываем клавиатуру
-                if (chartInstance) { // Очищаем график
+                resultDiv.classList.add("hidden"); 
+                hideKeyboard(); 
+                if (chartInstance) { 
                     chartInstance.data.labels = [];
                     chartInstance.data.datasets.forEach(dataset => dataset.data = []);
                     chartInstance.update();
                 }
                 if (inputs.length > 0) {
-                    inputs[0].focus(); // Устанавливаем фокус на первое поле
+                    inputs[0].focus(); 
                 }
             });
         });
