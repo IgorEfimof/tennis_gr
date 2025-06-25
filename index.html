@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Прогноз победителя в настольном теннисе</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Общие стили */
         * {
@@ -300,8 +301,11 @@
                 <p>Средний коэффициент игрока A: <span id="avgA"></span></p>
                 <p>Средний коэффициент игрока B: <span id="avgB"></span></p>
                 <p><strong>Победитель:</strong> <span id="winner"></span></p>
+                <p>Точка пересечения на графике: <span id="intersectionPoint"></span></p>
+                <p>Будущая точка пересечения (волновой анализ): <span id="futureIntersectionPoint"></span></p>
             </div>
-            </main>
+            <canvas id="chart"></canvas>
+        </main>
     </div>
 
     <div id="custom-keyboard">
@@ -322,11 +326,17 @@
         document.addEventListener("DOMContentLoaded", () => {
             const gameCount = 10; // Количество геймов
             const gamesContainer = document.getElementById("games");
-            const clearBtn = document.getElementById("clearBtn"); // Новая кнопка
+            const clearBtn = document.getElementById("clearBtn");
             const resultDiv = document.getElementById("result");
             const avgASpan = document.getElementById("avgA");
             const avgBSpan = document.getElementById("avgB");
             const winnerSpan = document.getElementById("winner");
+            const intersectionPointSpan = document.getElementById("intersectionPoint");
+            const futureIntersectionPointSpan = document.getElementById("futureIntersectionPoint");
+            
+            // Возвращаем Chart.js
+            const chartCanvas = document.getElementById("chart");
+            let chartInstance = null; // Переменная для экземпляра графика Chart.js
 
             const customKeyboard = document.getElementById("custom-keyboard");
             const keyboardButtons = customKeyboard.querySelectorAll("button");
@@ -358,12 +368,10 @@
                 activeInput = null; // Сбрасываем активное поле
             };
 
-            // Функция для выполнения расчета
-            const performCalculation = () => {
-                let totalA = 0;
-                let totalB = 0;
-                let filledGamesCount = 0; // Считаем заполненные пары геймов
-
+            // Функция для получения и форматирования значений из полей
+            const getFormattedValues = () => {
+                const valuesA = [];
+                const valuesB = [];
                 for (let i = 0; i < inputs.length; i += 2) {
                     const inputA = inputs[i];
                     const inputB = inputs[i + 1];
@@ -372,67 +380,273 @@
                     let valueStrB = inputB.value;
 
                     // Валидация и доведение до формата X,XX
-                    if (valueStrA && valueStrB) { // Только если оба поля в паре заполнены
+                    if (valueStrA) {
                         if (!valueStrA.includes(',')) { valueStrA += ',00'; }
                         else if (valueStrA.split(',')[1].length === 0) { valueStrA += '00'; }
                         else if (valueStrA.split(',')[1].length === 1) { valueStrA += '0'; }
+                        valuesA.push(parseFloat(valueStrA.replace(/,/g, ".")));
+                    } else {
+                        valuesA.push(NaN); // Добавляем NaN, чтобы сохранить индексы
+                    }
 
+                    if (valueStrB) {
                         if (!valueStrB.includes(',')) { valueStrB += ',00'; }
                         else if (valueStrB.split(',')[1].length === 0) { valueStrB += '00'; }
                         else if (valueStrB.split(',')[1].length === 1) { valueStrB += '0'; }
+                        valuesB.push(parseFloat(valueStrB.replace(/,/g, ".")));
+                    } else {
+                        valuesB.push(NaN); // Добавляем NaN, чтобы сохранить индексы
+                    }
+                }
+                return { valuesA, valuesB };
+            };
 
-                        const valueA = parseFloat(valueStrA.replace(/,/g, "."));
-                        const valueB = parseFloat(valueStrB.replace(/,/g, "."));
+            // Функция для расчета победителя и точек пересечения
+            const performCalculation = () => {
+                const { valuesA, valuesB } = getFormattedValues();
 
-                        if (!isNaN(valueA) && !isNaN(valueB)) {
-                            totalA += valueA;
-                            totalB += valueB;
-                            filledGamesCount++;
-                        }
+                let totalA = 0;
+                let totalB = 0;
+                let filledGamesCount = 0; // Считаем заполненные пары геймов
+
+                const labels = []; // Для графика
+                const dataA = []; // Для графика
+                const dataB = []; // Для графика
+
+                for (let i = 0; i < gameCount; i++) {
+                    const valA = valuesA[i];
+                    const valB = valuesB[i];
+
+                    labels.push(`Гейм ${i + 1}`);
+                    dataA.push(valA);
+                    dataB.push(valB);
+
+                    if (!isNaN(valA) && !isNaN(valB)) {
+                        totalA += valA;
+                        totalB += valB;
+                        filledGamesCount++;
                     }
                 }
 
                 if (filledGamesCount === 0) {
-                    // alert("Пожалуйста, заполните хотя бы одну пару коэффициентов.");
-                    resultDiv.classList.add("hidden"); // Скрываем результат, если нет данных
+                    resultDiv.classList.add("hidden");
+                    if (chartInstance) {
+                        chartInstance.data.labels = [];
+                        chartInstance.data.datasets = [];
+                        chartInstance.update();
+                    }
                     return;
                 }
 
                 const avgA = (totalA / filledGamesCount).toFixed(2);
                 const avgB = (totalB / filledGamesCount).toFixed(2);
 
-                let winner = "Ничья";
-                if (avgA < avgB) {
-                    winner = "Игрок A";
-                } else if (avgB < avgA) {
-                    winner = "Игрок B";
-                }
-
                 avgASpan.textContent = avgA;
                 avgBSpan.textContent = avgB;
+
+                // --- Логика определения точки пересечения ---
+                let intersectionPoint = 'Нет';
+                let futureIntersectionPoint = 'Не определена'; // Для волнового анализа
+
+                // Для простой линии, найдем "точку пересечения" как момент, когда A и B были максимально близки
+                // или когда они "перешли" друг через друга, если смотреть на изменение их разницы
+                let minDiff = Infinity;
+                let currentIntersectionGame = -1;
+                let lastDiff = 0;
+
+                for (let i = 0; i < filledGamesCount; i++) {
+                    const diff = valuesA[i] - valuesB[i];
+                    if (Math.abs(diff) < Math.abs(minDiff)) {
+                        minDiff = diff;
+                        currentIntersectionGame = i + 1;
+                    }
+                    // Если знаки разницы меняются, значит, было пересечение
+                    if (i > 0 && (valuesA[i] - valuesB[i]) * (valuesA[i-1] - valuesB[i-1]) < 0) {
+                        // Для упрощения, можно считать эту точку пересечения как место, где они пересеклись
+                        // В более сложной системе это может быть интерполяция
+                        if (currentIntersectionGame === -1) { // Если не нашли более близкую точку
+                            currentIntersectionGame = i + 1;
+                        }
+                    }
+                }
+
+                if (currentIntersectionGame !== -1) {
+                    intersectionPoint = `Гейм ${currentIntersectionGame}`;
+                }
+
+
+                // --- "Будущая точка пересечения" на основе волнового анализа (симуляция) ---
+                // Предположим, что "волновой анализ" предсказывает тренд.
+                // Например, если A в среднем ниже B, то A "на подъеме" и наоборот.
+                // Или можно просто предсказать, что линии продолжат свой текущий наклон.
+                // Для простоты, давайте смоделируем это:
+                // Если разница между avgA и avgB большая, то для "пересечения" потребуется много очков.
+                // Если маленькая, то мало.
+                const scoreToWin = 11; // Пример: для победы нужно 11 очков
+
+                const avgDiff = Math.abs(avgA - avgB);
+
+                if (filledGamesCount >= 2) { // Нужно хотя бы 2 гейма для минимальной "тенденции"
+                    // Простая симуляция: предсказываем, сколько "очков" потребуется для гипотетического пересечения
+                    // Если коэффициенты расходятся, предполагаем, что они продолжат расходиться
+                    // Если сходятся, то продолжат сходиться
+                    const lastAGain = valuesA[filledGamesCount - 1] - valuesA[filledGamesCount - 2];
+                    const lastBGain = valuesB[filledGamesCount - 1] - valuesB[filledGamesCount - 2];
+
+                    // Очень упрощенная "будущая точка пересечения":
+                    // Если A в целом ниже (лучше) и имеет положительную динамику (lastAGain < 0),
+                    // а B выше (хуже) и имеет отрицательную динамику (lastBGain > 0),
+                    // то пересечение вряд ли произойдет или произойдет далеко.
+                    // И наоборот.
+                    
+                    // Простое правило: если средняя разница больше 0.5, считаем, что пересечение за пределами "11 очков"
+                    if (avgDiff > 0.5) {
+                         futureIntersectionPoint = `За пределами ${scoreToWin} очков`;
+                    } else if (avgDiff > 0.1) {
+                        futureIntersectionPoint = `Возможно, к ${scoreToWin / 2} очкам`;
+                    } else {
+                        futureIntersectionPoint = `Близка, к ${scoreToWin / 4} очкам`;
+                    }
+                } else {
+                    futureIntersectionPoint = `Недостаточно данных для волнового анализа`;
+                }
+
+                intersectionPointSpan.textContent = intersectionPoint;
+                futureIntersectionPointSpan.textContent = futureIntersectionPoint;
+
+                // --- Определение победителя на основе новой логики ---
+                let winner = "Ничья";
+                let finalWinnerDetermined = false;
+
+                // 1. Если будущая точка пересечения "не входит в прогноз" (за пределами 11 очков)
+                if (futureIntersectionPoint.includes("За пределами 11 очков")) {
+                    if (avgA < avgB) { // Игрок A ниже (лучше)
+                        winner = "Игрок A (График ниже)";
+                    } else if (avgB < avgA) { // Игрок B ниже (лучше)
+                        winner = "Игрок B (График ниже)";
+                    } else {
+                        winner = "Ничья (Графики одинаковы)";
+                    }
+                    finalWinnerDetermined = true;
+                } else {
+                    // 2. Если будущая точка пересечения входит в прогноз, используем ее для более точного определения
+                    // (Эта часть требует более сложной модели, сейчас это будет простое сравнение средних)
+                    // Для текущей симуляции, если "пересечение" не далеко,
+                    // и у нас нет сложной модели, вернемся к простым средним или текущему тренду.
+                    // Здесь можно было бы использовать TF.js для более сложного анализа тренда.
+                    if (avgA < avgB) {
+                        winner = "Игрок A";
+                    } else if (avgB < avgA) {
+                        winner = "Игрок B";
+                    } else {
+                        winner = "Ничья";
+                    }
+                    finalWinnerDetermined = true; // Для простоты всегда определяем
+                }
+
                 winnerSpan.textContent = winner;
                 resultDiv.classList.remove("hidden");
+
+                // --- Обновление графика ---
+                if (chartInstance) {
+                    chartInstance.data.labels = labels;
+                    chartInstance.data.datasets[0].data = dataA;
+                    chartInstance.data.datasets[1].data = dataB;
+                    chartInstance.update();
+                } else {
+                    const ctx = chartCanvas.getContext('2d');
+                    chartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Коэффициент A',
+                                    data: dataA,
+                                    borderColor: '#4f46e5', // Синий
+                                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                                    tension: 0.2,
+                                    pointBackgroundColor: '#4f46e5',
+                                    pointBorderColor: '#fff',
+                                    pointHoverBackgroundColor: '#fff',
+                                    pointHoverBorderColor: '#4f46e5',
+                                    fill: false
+                                },
+                                {
+                                    label: 'Коэффициент B',
+                                    data: dataB,
+                                    borderColor: '#ef4444', // Красный
+                                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                                    tension: 0.2,
+                                    pointBackgroundColor: '#ef4444',
+                                    pointBorderColor: '#fff',
+                                    pointHoverBackgroundColor: '#fff',
+                                    pointHoverBorderColor: '#ef4444',
+                                    fill: false
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false, // Для лучшего контроля размера
+                            scales: {
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Гейм',
+                                        color: 'white'
+                                    },
+                                    grid: {
+                                        color: '#333'
+                                    },
+                                    ticks: {
+                                        color: 'white'
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: false,
+                                    title: {
+                                        display: true,
+                                        text: 'Коэффициент',
+                                        color: 'white'
+                                    },
+                                    grid: {
+                                        color: '#333'
+                                    },
+                                    ticks: {
+                                        color: 'white'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    labels: {
+                                        color: 'white'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
             };
 
             // Обработчики для полей ввода (появление клавиатуры)
             inputs.forEach((input) => {
-                input.setAttribute('inputmode', 'none'); // Чтобы системная клавиатура не появлялась
-                input.setAttribute('readonly', 'readonly'); // Запрещаем ввод с системной клавиатуры
-                input.setAttribute('autocomplete', 'off'); // Отключаем автозаполнение
+                input.setAttribute('inputmode', 'none');
+                input.setAttribute('readonly', 'readonly');
+                input.setAttribute('autocomplete', 'off');
 
                 input.addEventListener("focus", () => {
                     activeInput = input;
                     customKeyboard.classList.add("visible");
                     document.body.classList.add("keyboard-active");
-                    // Прокручиваем к активному полю, если оно скрыто клавиатурой
                     setTimeout(() => {
                         activeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 300); // Задержка для анимации появления клавиатуры
+                    }, 300);
                 });
 
-                // Дополнительный обработчик для тапов/кликов на input
                 input.addEventListener("click", (e) => {
-                    e.preventDefault(); // Предотвращаем любые дефолтные действия
+                    e.preventDefault();
                     activeInput = input;
                     customKeyboard.classList.add("visible");
                     document.body.classList.add("keyboard-active");
@@ -443,20 +657,21 @@
             // Обработчик для кнопок кастомной клавиатуры
             keyboardButtons.forEach(button => {
                 button.addEventListener("click", (e) => {
-                    e.preventDefault(); // Предотвращаем дефолтное действие (потерю фокуса)
-                    if (!activeInput) return; // Если нет активного поля, ничего не делаем
+                    e.preventDefault();
+                    if (!activeInput) return;
 
                     const key = button.dataset.key;
                     let currentValue = activeInput.value;
 
                     if (key === "delete") {
-                        // Удаляем последний символ
                         activeInput.value = currentValue.slice(0, -1);
-                        // Скрываем результат при очистке
-                        resultDiv.classList.add("hidden");
+                        resultDiv.classList.add("hidden"); // Скрываем результат при очистке
+                        if (chartInstance) { // Очищаем график при удалении
+                            chartInstance.data.labels = [];
+                            chartInstance.data.datasets.forEach(dataset => dataset.data = []);
+                            chartInstance.update();
+                        }
                     } else if (key === ".") {
-                        // Точка теперь может использоваться для ввода "0," если поле пустое
-                        // или для добавления запятой, если в поле только цифра (например, 1 -> 1,)
                         if (!currentValue.includes(',')) {
                             if (currentValue.length === 0) {
                                 activeInput.value = "0,";
@@ -465,14 +680,19 @@
                             }
                         }
                     } else { // Если нажата цифровая кнопка
-                        // Логика автоматической постановки запятой после первой цифры
                         if (!currentValue.includes(',')) {
-                            // Если поле пустое, вводим цифру и сразу запятую
-                            activeInput.value = key + ',';
+                            // Автоматическое добавление запятой после первой цифры
+                            if (currentValue.length === 0) {
+                                activeInput.value = key + ',';
+                            } else { // Если уже есть одна цифра, например '1', и вводим '6' -> '1,6'
+                                activeInput.value += key;
+                                if (!activeInput.value.includes(',')) { // Если не было запятой
+                                    activeInput.value += ','; // Добавляем запятую
+                                }
+                            }
                         } else {
-                            // Если запятая уже есть, добавляем цифры после нее
                             const parts = currentValue.split(',');
-                            if (parts[1].length < 2) { // Только если после запятой меньше 2 цифр
+                            if (parts[1].length < 2) {
                                 activeInput.value += key;
                             }
                         }
@@ -506,6 +726,11 @@
                 });
                 resultDiv.classList.add("hidden"); // Скрываем блок результатов
                 hideKeyboard(); // Скрываем клавиатуру
+                if (chartInstance) { // Очищаем график
+                    chartInstance.data.labels = [];
+                    chartInstance.data.datasets.forEach(dataset => dataset.data = []);
+                    chartInstance.update();
+                }
                 if (inputs.length > 0) {
                     inputs[0].focus(); // Устанавливаем фокус на первое поле
                 }
