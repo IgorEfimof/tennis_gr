@@ -4,8 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Прогноз победителя в настольном теннисе</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Общие стили */
         * {
@@ -124,11 +122,11 @@
         }
 
         /* Стили для кнопок */
-        button {
+        #clearBtn { /* Изменено ID для новой кнопки */
             margin-top: 0.5rem;
             padding: 0.6rem 1rem;
             font-size: 1rem;
-            background-color: #4f46e5;
+            background-color: #f44336; /* Красный цвет для кнопки очистки */
             color: white;
             border: none;
             border-radius: 6px;
@@ -137,8 +135,8 @@
             width: 100%;
         }
 
-        button:hover {
-            background-color: #3730a3;
+        #clearBtn:hover { /* Изменено ID для новой кнопки */
+            background-color: #d32f2f;
         }
 
         /* Стили для блока результата */
@@ -243,7 +241,7 @@
                 padding: 0.3rem;
             }
 
-            button {
+            #clearBtn { /* Изменено ID для новой кнопки */
                 font-size: 0.95rem;
                 padding: 0.5rem;
             }
@@ -296,15 +294,14 @@
                 </div>
             </div>
             <div id="games"></div>
-            <button id="predictBtn">Прогнозировать победителя</button>
+            <button id="clearBtn">Очистить данные</button>
             <div id="result" class="result hidden">
                 <h2>Результат прогноза:</h2>
                 <p>Средний коэффициент игрока A: <span id="avgA"></span></p>
                 <p>Средний коэффициент игрока B: <span id="avgB"></span></p>
                 <p><strong>Победитель:</strong> <span id="winner"></span></p>
             </div>
-            <canvas id="chart"></canvas>
-        </main>
+            </main>
     </div>
 
     <div id="custom-keyboard">
@@ -325,13 +322,11 @@
         document.addEventListener("DOMContentLoaded", () => {
             const gameCount = 10; // Количество геймов
             const gamesContainer = document.getElementById("games");
-            const predictBtn = document.getElementById("predictBtn");
+            const clearBtn = document.getElementById("clearBtn"); // Новая кнопка
             const resultDiv = document.getElementById("result");
             const avgASpan = document.getElementById("avgA");
             const avgBSpan = document.getElementById("avgB");
             const winnerSpan = document.getElementById("winner");
-            const chartCanvas = document.getElementById("chart");
-            let chartInstance = null;
 
             const customKeyboard = document.getElementById("custom-keyboard");
             const keyboardButtons = customKeyboard.querySelectorAll("button");
@@ -351,12 +346,72 @@
             }
 
             const inputs = document.querySelectorAll("input[type='text']");
+            const lastInput = inputs[inputs.length - 1]; // Последнее поле ввода
 
             // Функция для скрытия клавиатуры
             const hideKeyboard = () => {
                 customKeyboard.classList.remove("visible");
                 document.body.classList.remove("keyboard-active");
+                if (activeInput) {
+                    activeInput.blur(); // Убираем фокус с поля
+                }
                 activeInput = null; // Сбрасываем активное поле
+            };
+
+            // Функция для выполнения расчета
+            const performCalculation = () => {
+                let totalA = 0;
+                let totalB = 0;
+                let filledGamesCount = 0; // Считаем заполненные пары геймов
+
+                for (let i = 0; i < inputs.length; i += 2) {
+                    const inputA = inputs[i];
+                    const inputB = inputs[i + 1];
+
+                    let valueStrA = inputA.value;
+                    let valueStrB = inputB.value;
+
+                    // Валидация и доведение до формата X,XX
+                    if (valueStrA && valueStrB) { // Только если оба поля в паре заполнены
+                        if (!valueStrA.includes(',')) { valueStrA += ',00'; }
+                        else if (valueStrA.split(',')[1].length === 0) { valueStrA += '00'; }
+                        else if (valueStrA.split(',')[1].length === 1) { valueStrA += '0'; }
+
+                        if (!valueStrB.includes(',')) { valueStrB += ',00'; }
+                        else if (valueStrB.split(',')[1].length === 0) { valueStrB += '00'; }
+                        else if (valueStrB.split(',')[1].length === 1) { valueStrB += '0'; }
+
+                        const valueA = parseFloat(valueStrA.replace(/,/g, "."));
+                        const valueB = parseFloat(valueStrB.replace(/,/g, "."));
+
+                        if (!isNaN(valueA) && !isNaN(valueB)) {
+                            totalA += valueA;
+                            totalB += valueB;
+                            filledGamesCount++;
+                        }
+                    }
+                }
+
+                if (filledGamesCount === 0) {
+                    // alert("Пожалуйста, заполните хотя бы одну пару коэффициентов.");
+                    resultDiv.classList.add("hidden"); // Скрываем результат, если нет данных
+                    return;
+                }
+
+                const avgA = (totalA / filledGamesCount).toFixed(2);
+                const avgB = (totalB / filledGamesCount).toFixed(2);
+
+                let winner = "Ничья";
+                if (avgA < avgB) {
+                    winner = "Игрок A";
+                } else if (avgB < avgA) {
+                    winner = "Игрок B";
+                }
+
+                avgASpan.textContent = avgA;
+                avgBSpan.textContent = avgB;
+                winnerSpan.textContent = winner;
+                resultDiv.classList.remove("hidden");
             };
 
             // Обработчики для полей ввода (появление клавиатуры)
@@ -369,21 +424,18 @@
                     activeInput = input;
                     customKeyboard.classList.add("visible");
                     document.body.classList.add("keyboard-active");
-
                     // Прокручиваем к активному полю, если оно скрыто клавиатурой
                     setTimeout(() => {
                         activeInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }, 300); // Задержка для анимации появления клавиатуры
                 });
 
-                // Дополнительный обработчик для тапов/кликов на input,
-                // чтобы убедиться, что фокус устанавливается корректно
+                // Дополнительный обработчик для тапов/кликов на input
                 input.addEventListener("click", (e) => {
-                    e.preventDefault(); // Предотвращаем любые дефолтные действия, которые могут убрать фокус
+                    e.preventDefault(); // Предотвращаем любые дефолтные действия
                     activeInput = input;
                     customKeyboard.classList.add("visible");
                     document.body.classList.add("keyboard-active");
-                    // Можно также вызвать focus() здесь, если кажется, что click не всегда вызывает focus на iPad
                     activeInput.focus();
                 });
             });
@@ -400,48 +452,23 @@
                     if (key === "delete") {
                         // Удаляем последний символ
                         activeInput.value = currentValue.slice(0, -1);
+                        // Скрываем результат при очистке
+                        resultDiv.classList.add("hidden");
                     } else if (key === ".") {
-                        // Эта кнопка теперь фактически не используется для добавления запятой,
-                        // так как запятая добавляется автоматически после первой цифры.
-                        // Оставляем логику на случай, если пользователь нажмет ее вручную после удаления.
-                        if (!currentValue.includes(',') && currentValue.length > 0 && /^\d+$/.test(currentValue)) {
-                             activeInput.value += ',';
-                        } else if (!currentValue.includes(',') && currentValue.length === 0) {
-                            activeInput.value = '0,';
+                        // Точка теперь может использоваться для ввода "0," если поле пустое
+                        // или для добавления запятой, если в поле только цифра (например, 1 -> 1,)
+                        if (!currentValue.includes(',')) {
+                            if (currentValue.length === 0) {
+                                activeInput.value = "0,";
+                            } else if (/^\d+$/.test(currentValue)) {
+                                activeInput.value = currentValue + ",";
+                            }
                         }
                     } else { // Если нажата цифровая кнопка
-                        // Проверяем, если это первая цифра в пустом поле,
-                        // или если в поле уже есть цифра, но нет запятой
+                        // Логика автоматической постановки запятой после первой цифры
                         if (!currentValue.includes(',')) {
-                            // Если это первая цифра, добавляем ее и сразу запятую
-                            if (currentValue.length === 0) {
-                                activeInput.value = key + ',';
-                            } else if (currentValue.length === 1 && !isNaN(parseInt(currentValue))) {
-                                // Если уже есть одна цифра (например, '1'), и пользователь вводит еще одну (например, '2')
-                                // это может произойти, если пользователь удалил запятую или это не первая цифра,
-                                // а уже что-то вроде 12, то это некорректный формат.
-                                // Здесь мы ожидаем, что будет только одна цифра, после которой сразу запятая.
-                                // Новая логика не позволит ввести 12.
-                                // Если текущее значение - просто цифра, и мы добавляем новую,
-                                // это означает, что мы хотим, чтобы это была цифра до запятой.
-                                // Например, пользователь ввел '1', потом удалил запятую, поле стало '1'.
-                                // Теперь он нажимает '2'. Мы хотим, чтобы было '1,2' или '2,'?
-                                // По требованию "первая цифра", предполагаем, что она одна до запятой.
-                                // Поэтому, если уже есть цифра и нет запятой, мы позволяем добавить только запятую.
-                                // А если это новая цифра после удаления всего, то она должна получить запятую.
-
-                                // Уточненная логика: если в поле нет запятой и длина 1 (целое число),
-                                // и пользователь вводит новую цифру, то текущая цифра должна стать первой
-                                // частью числа, и добавиться запятая, а новая цифра - первая после запятой.
-                                // Например: пусто -> 1 -> 1, -> 1,6 -> 1,62.
-                                // Если была 1, пользователь нажимает 6, то должно быть 1,6
-                                activeInput.value += ','; // Добавляем запятую
-                                activeInput.value += key; // Добавляем только что введенную цифру
-                            } else {
-                                // Если в поле уже есть что-то вроде "1,2", но мы нажимаем цифру,
-                                // она должна идти после запятой.
-                                activeInput.value += key; // Добавляем цифру
-                            }
+                            // Если поле пустое, вводим цифру и сразу запятую
+                            activeInput.value = key + ',';
                         } else {
                             // Если запятая уже есть, добавляем цифры после нее
                             const parts = currentValue.split(',');
@@ -451,7 +478,7 @@
                         }
                     }
 
-                    // --- Логика автоматического перехода ---
+                    // --- Логика автоматического перехода и расчета ---
                     let value = activeInput.value;
 
                     // Убедимся, что формат X,XX соблюден для перехода
@@ -462,102 +489,27 @@
                         if (nextInput) {
                             nextInput.focus(); // Переводим фокус на следующее поле
                         } else {
-                            // Если это последнее поле и оно заполнено, скрываем клавиатуру
-                            hideKeyboard();
-                        }
-                    }
-                    // --- Конец логики автоматического перехода ---
-                });
-            });
-
-            // Обработчик для кнопки "Прогнозировать победителя"
-            predictBtn.addEventListener("click", () => {
-                const inputs = document.querySelectorAll("input[type='text']");
-                let totalA = 0;
-                let totalB = 0;
-                let count = 0;
-
-                inputs.forEach((input) => {
-                    // Валидация для обеспечения формата X,XX перед расчетом
-                    let valueStr = input.value;
-                    if (!valueStr) { // Если поле пустое, пропускаем
-                        return;
-                    }
-
-                    // Доводим до формата X,XX
-                    if (!valueStr.includes(',')) {
-                        valueStr += ',00';
-                    } else {
-                        const parts = valueStr.split(',');
-                        if (parts[1].length === 0) {
-                            valueStr += '00';
-                        } else if (parts[1].length === 1) {
-                            valueStr += '0';
-                        }
-                    }
-
-                    // Преобразуем запятую в точку для parseFloat
-                    const value = parseFloat(valueStr.replace(/,/g, "."));
-                    if (!isNaN(value)) {
-                        if (input.dataset.player === "a") {
-                            totalA += value;
-                        } else {
-                            totalB += value;
-                        }
-                        count++;
-                    }
-                });
-
-                if (count === 0) {
-                    alert("Пожалуйста, заполните хотя бы одну пару коэффициентов (Игрок А и Игрок B).");
-                    return;
-                }
-
-                const avgA = (totalA / (count / 2)).toFixed(2); // Делим на count/2, так как count включает обе пары
-                const avgB = (totalB / (count / 2)).toFixed(2);
-
-                let winner = "Ничья";
-                if (avgA < avgB) {
-                    winner = "Игрок A";
-                } else if (avgB < avgA) {
-                    winner = "Игрок B";
-                }
-
-                avgASpan.textContent = avgA;
-                avgBSpan.textContent = avgB;
-                winnerSpan.textContent = winner;
-
-                resultDiv.classList.remove("hidden");
-                // Скрываем клавиатуру после расчета
-                hideKeyboard();
-            });
-
-            // Инициализация Chart.js (если она нужна)
-            if (chartCanvas) {
-                const ctx = chartCanvas.getContext('2d');
-                chartInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: [],
-                        datasets: []
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: false
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                labels: {
-                                    color: 'white'
-                                }
+                            // Если это последнее поле и оно заполнено
+                            if (activeInput === lastInput) {
+                                hideKeyboard(); // Скрываем клавиатуру
+                                performCalculation(); // Выполняем расчет
                             }
                         }
                     }
                 });
-            }
+            });
+
+            // Обработчик для кнопки "Очистить данные"
+            clearBtn.addEventListener("click", () => {
+                inputs.forEach(input => {
+                    input.value = ""; // Очищаем все поля ввода
+                });
+                resultDiv.classList.add("hidden"); // Скрываем блок результатов
+                hideKeyboard(); // Скрываем клавиатуру
+                if (inputs.length > 0) {
+                    inputs[0].focus(); // Устанавливаем фокус на первое поле
+                }
+            });
         });
     </script>
 </body>
