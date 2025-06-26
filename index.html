@@ -298,12 +298,12 @@
         <main>
             <div class="players">
                 <div class="player player-a">
-                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAgAB4DASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABAUDAf/EACoQAAICAgICAQMDBQEAAAAAAAECAwQFEQASIRMxQQYiUWEUIzJxgfDx/8QAFgEBAQEAAAAAAAAAAAAAAAAAAQIF/8QAHBEAAgIDAQEAAAAAAAAAAAAAARECAxITIXHR/9oADAMBAAIRAxAD8D5O6d2j4XvFrtqHwWwY7F887b47b4GkX9N/eS0q1q79w/D+N32L4b3p4Xo0d4eHn9GvT2o+H+3f1O/2X1P7Pz+r9H633/4qjj44z448ePG8ePG8ePO8ePHjxvjx2/wDPHHj/AMePLX+7X+g1s06FfUr2g2/A+C+S9/N8d3m/f5P0+C5/N8d933eL+D2aGv6P8AqJ/xH8Pz/wDIf4fP+T/D8/n/AKP8Pz+f/j/5R1e/Lz+rXp+1Pwvf6vT2o+H+3f1O/2X1P7Pz+r9H633/4qjj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHth//9k=" alt="Игрок A" />
+                    <img src="images/Photoroom_20250515_222050 2.jpeg" alt="Игрок A" />
                     <span>Игрок A</span>
                     <span class="score">0</span>
                 </div>
                 <div class="player player-b">
-                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAgAB4DASIAAhEBAQEDEQH/xAAXAAABAQEBAAAAAAAAAAAAAAAABAUDAf/EACoQAAICAgICAQMDBQEAAAAAAAECAwQFEQASIRMxQQYiUWEUIzJxgfDx/8QAFgEBAQEAAAAAAAAAAAAAAAAAAQIF/8QAHBEAAgIDAQEAAAAAAAAAAAAAARECAxITIXHR/9oADAMBAAIRAxAD8D5O6d2j4XvFrtqHwWwY7F887b47b4GkX9N/eS0q1q79w/D+N32L4b3p4Xo0d4eHn9GvT2o+H+3f1O/2X1P7Pz+r9H633/4qjj44z448ePG8ePG8ePO8ePHjxvjx2/wDPHHj/AMePLX+7X+g1s06FfUr2g2/A+C+S9/N8d3m/f5P0+C5/N8d933eL+D2aGv6P8AqJ/xH8Pz/wDIf4fP+T/D8/n/AKP8Pz+f/j/5R1e/Lz+rXp+1Pwvf6vT2o+H+3f1O/2X1P7Pz+r9H633/4qjj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHth//9k=" alt="Игрок B" />
+                    <img src="images/Photoroom_20250515_221809 2.jpeg" alt="Игрок B" />
                     <span>Игрок B</span>
                     <span class="score">0</span>
                 </div>
@@ -394,7 +394,6 @@
         
         document.addEventListener("DOMContentLoaded", () => {
             const gameCount = 10; 
-            // const gamesContainer = document.getElementById("games"); // Больше не используется для динамической генерации
             const clearBtn = document.getElementById("clearBtn");
             const resultDiv = document.getElementById("result");
             const avgASpan = document.getElementById("avgA");
@@ -412,18 +411,6 @@
             const keyboardButtons = customKeyboard.querySelectorAll("button");
 
             let activeInput = null; 
-
-            // Удален цикл для создания элементов, так как они теперь статически встроены.
-            // for (let i = 1; i <= gameCount; i++) {
-            //     const div = document.createElement("div");
-            //     div.className = "game-input";
-            //     div.innerHTML = `
-            //         <p><strong>Гейм ${i}</strong></p>
-            //         <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="${i}" maxlength="5" readonly>
-            //         <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="${i}" maxlength="5" readonly>
-            //     `;
-            //     gamesContainer.appendChild(div);
-            // }
 
             const inputs = document.querySelectorAll("input[type='text']");
             const lastInput = inputs[inputs.length - 1]; 
