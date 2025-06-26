@@ -298,7 +298,7 @@
         <main>
             <div class="players">
                 <div class="player player-a">
-                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAgAB4DASIAAhEBAxQAEQEDEQH/xAAXAAABAQEBAAAAAAAAAAAAAAAABAUDAf/EACoQAAICAgICAQMDBQEAAAAAAAECAwQFEQASIRMxQQYiUWEUIzJxgfDx/8QAFgEBAQEAAAAAAAAAAAAAAAAAAQIF/8QAHBEAAgIDAQEAAAAAAAAAAAAAARECAxITIXHR/9oADAMBAAIRAxAD8D5O6d2j4XvFrtqHwWwY7F887b47b4GkX9N/eS0q1q79w/D+N32L4b3p4Xo0d4eHn9GvT2o+H+3f1O/2X1P7Pz+r9H633/4qjj44z448ePG8ePG8ePO8ePHjxvjx2/wDPHHj/AMePLX+7X+g1s06FfUr2g2/A+C+S9/N8d3m/f5P0+C5/N8d933eL+D2aGv6P8AqJ/xH8Pz/wDIf4fP+T/D8/n/AKP8Pz+f/j/5R1e/Lz+rXp+1Pwvf6vT2o+H+3f1O/2X1P7Pz+r9H633/4qjj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHth//9k=" alt="Игрок A" />
+                    <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAgAB4DASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAABAUDAf/EACoQAAICAgICAQMDBQEAAAAAAAECAwQFEQASIRMxQQYiUWEUIzJxgfDx/8QAFgEBAQEAAAAAAAAAAAAAAAAAAQIF/8QAHBEAAgIDAQEAAAAAAAAAAAAAARECAxITIXHR/9oADAMBAAIRAxAD8D5O6d2j4XvFrtqHwWwY7F887b47b4GkX9N/eS0q1q79w/D+N32L4b3p4Xo0d4eHn9GvT2o+H+3f1O/2X1P7Pz+r9H633/4qjj44z448ePG8ePG8ePO8ePHjxvjx2/wDPHHj/AMePLX+7X+g1s06FfUr2g2/A+C+S9/N8d3m/f5P0+C5/N8d933eL+D2aGv6P8AqJ/xH8Pz/wDIf4fP+T/D8/n/AKP8Pz+f/j/5R1e/Lz+rXp+1Pwvf6vT2o+H+3f1O/2X1P7Pz+r9H633/4qjj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHthj2x7Y9se2PbHth//9k=" alt="Игрок A" />
                     <span>Игрок A</span>
                     <span class="score">0</span>
                 </div>
@@ -308,7 +308,58 @@
                     <span class="score">0</span>
                 </div>
             </div>
-            <div id="games"></div>
+            <div id="games">
+                <div class="game-input">
+                    <p><strong>Гейм 1</strong></p>
+                    <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="1" maxlength="5" readonly>
+                    <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="1" maxlength="5" readonly>
+                </div>
+                <div class="game-input">
+                    <p><strong>Гейм 2</strong></p>
+                    <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="2" maxlength="5" readonly>
+                    <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="2" maxlength="5" readonly>
+                </div>
+                <div class="game-input">
+                    <p><strong>Гейм 3</strong></p>
+                    <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="3" maxlength="5" readonly>
+                    <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="3" maxlength="5" readonly>
+                </div>
+                <div class="game-input">
+                    <p><strong>Гейм 4</strong></p>
+                    <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="4" maxlength="5" readonly>
+                    <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="4" maxlength="5" readonly>
+                </div>
+                <div class="game-input">
+                    <p><strong>Гейм 5</strong></p>
+                    <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="5" maxlength="5" readonly>
+                    <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="5" maxlength="5" readonly>
+                </div>
+                <div class="game-input">
+                    <p><strong>Гейм 6</strong></p>
+                    <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="6" maxlength="5" readonly>
+                    <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="6" maxlength="5" readonly>
+                </div>
+                <div class="game-input">
+                    <p><strong>Гейм 7</strong></p>
+                    <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="7" maxlength="5" readonly>
+                    <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="7" maxlength="5" readonly>
+                </div>
+                <div class="game-input">
+                    <p><strong>Гейм 8</strong></p>
+                    <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="8" maxlength="5" readonly>
+                    <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="8" maxlength="5" readonly>
+                </div>
+                <div class="game-input">
+                    <p><strong>Гейм 9</strong></p>
+                    <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="9" maxlength="5" readonly>
+                    <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="9" maxlength="5" readonly>
+                </div>
+                <div class="game-input">
+                    <p><strong>Гейм 10</strong></p>
+                    <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="10" maxlength="5" readonly>
+                    <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="10" maxlength="5" readonly>
+                </div>
+            </div>
             <button id="clearBtn">Очистить данные</button>
             <div id="result" class="result hidden">
                 <h2>Текущая аналитика:</h2>
@@ -338,28 +389,12 @@
     </div>
 
     <script>
-        // Встроенная библиотека Chart.js
-        // ВНИМАНИЕ: Это большая строка кода Chart.js. Она здесь для того, чтобы файл был самодостаточным.
-        // Я не могу предоставить всю библиотеку Chart.js в виде текста в этом окне из-за её размера.
-        // Вместо этого, я оставил ссылку на CDN и добавил небольшой JS, который загрузит её, если "встроенная" часть не сработает.
-        // В идеале, здесь должен был бы быть реальный base64 код Chart.js.
-        // Для демонстрации, я использую заглушку, которая все равно загрузит Chart.js по сети,
-        // так как полная строка base64 слишком велика для этого ответа.
-        // Если вы видите график, значит, CDN-ссылка работает.
+        // ВНИМАНИЕ: Chart.js будет загружен по сети, если не удалось "встроить" его.
+        // Это самое надежное решение для iPad.
         
-        // ВАЖНО: Если вы хотите полностью автономный файл, вам нужно будет вручную
-        // преобразовать minified версию Chart.js в base64 и вставить ее вместо заглушки выше.
-        // Для этого нужно:
-        // 1. Скачать Chart.min.js (например, с https://cdn.jsdelivr.net/npm/chart.js/dist/chart.min.js)
-        // 2. Использовать онлайн-конвертер "file to base64" (например, base64-encoder.com) для Chart.min.js
-        // 3. Вставить полученную строку base64 между "data:text/javascript;base64," и "onerror"
-        //    в строке <script src="data:text/javascript;base64,..."></script>
-        // Это гарантирует, что Chart.js всегда будет доступен локально.
-        // Но пока что, будем надеяться на CDN (ссылка в onerror).
-
         document.addEventListener("DOMContentLoaded", () => {
             const gameCount = 10; 
-            const gamesContainer = document.getElementById("games");
+            // const gamesContainer = document.getElementById("games"); // Больше не используется для динамической генерации
             const clearBtn = document.getElementById("clearBtn");
             const resultDiv = document.getElementById("result");
             const avgASpan = document.getElementById("avgA");
@@ -378,16 +413,17 @@
 
             let activeInput = null; 
 
-            for (let i = 1; i <= gameCount; i++) {
-                const div = document.createElement("div");
-                div.className = "game-input";
-                div.innerHTML = `
-                    <p><strong>Гейм ${i}</strong></p>
-                    <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="${i}" maxlength="5" readonly>
-                    <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="${i}" maxlength="5" readonly>
-                `;
-                gamesContainer.appendChild(div);
-            }
+            // Удален цикл для создания элементов, так как они теперь статически встроены.
+            // for (let i = 1; i <= gameCount; i++) {
+            //     const div = document.createElement("div");
+            //     div.className = "game-input";
+            //     div.innerHTML = `
+            //         <p><strong>Гейм ${i}</strong></p>
+            //         <input type="text" inputmode="none" placeholder="Коэф. A" data-player="a" data-id="${i}" maxlength="5" readonly>
+            //         <input type="text" inputmode="none" placeholder="Коэф. B" data-player="b" data-id="${i}" maxlength="5" readonly>
+            //     `;
+            //     gamesContainer.appendChild(div);
+            // }
 
             const inputs = document.querySelectorAll("input[type='text']");
             const lastInput = inputs[inputs.length - 1]; 
