@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Анализ коэффициентов в настольном теннисе (LIVE)</title>
-    <script src="data:text/javascript;base64,eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6ImNoYXJ0c2VydmVyIiwiaWF0IjoxNjU5NTA2NjA2LCJleHAiOjE2NjIwOTg2MDZ9.YOUR_CHARTJS_BASE64_HERE" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/chart.js';document.head.appendChild(s);"></script>
+    <script src="data:text/javascript;base64,eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6ImNoYXJ0c2VydmVyIiwiaWF0IjoxNjU5NTA2NjA2LCJleHAiOjE2NjIwOTg2MDZ9.YOUR_CHARTJS_BASE64_HERE" onerror="var chartScript = document.createElement('script'); chartScript.src = 'https://cdn.jsdelivr.net/npm/chart.js'; document.head.appendChild(chartScript);"></script>
     <style>
         /* Общие стили */
         * {
@@ -444,8 +444,11 @@
                                 str = parts[0] + ',' + parts[1] + '0';
                             } else if (parts[1].length > 2) { 
                                 str = parts[0] + ',' + parts[1].substring(0,2);
+                            } else { 
+                                str = str + ',00';
                             }
-                        } else { 
+                        }
+                         else { 
                             str = str + ',00';
                         }
                         return parseFloat(str.replace(/,/g, "."));
@@ -802,6 +805,17 @@
                 }
                 if (inputs.length > 0) {
                     inputs[0].focus(); 
+                }
+            });
+
+            // Add this event listener to the document body
+            document.body.addEventListener("click", (event) => {
+                if (!activeInput) return; // If no input is active, do nothing
+
+                const target = event.target;
+                // Check if the click target is NOT an input field and NOT inside the custom keyboard
+                if (target !== activeInput && !customKeyboard.contains(target)) {
+                    hideKeyboard();
                 }
             });
         });
